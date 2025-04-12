@@ -40,10 +40,9 @@ def cargar_datos():
     aire['Fecha'] = aire['Fecha'].dt.floor('D')
     aire = localizar(aire)
     aire = aire.groupby(['Fecha', 'Latitud', 'Longitud', 'Localización']).agg({col: 'mean' for col in aire.columns if col not in ['Fecha', 'Latitud', 'Longitud', 'Localización']}).reset_index()
-    aire.set_index('Fecha', inplace=True)
-    aire['Año'] = aire.index.year
-    aire['Mes'] = aire.index.month
-    aire['Año-Mes'] = aire['Año'].astype(str) + '-' + aire['Mes'].astype(str).str.zfill(2)
+    aire['Año'] = aire.Fecha.dt.year
+    aire['Mes'] = aire.Fecha.dt.month
+    #aire['Año-Mes'] = aire['Año'].astype(str) + '-' + aire['Mes'].astype(str).str.zfill(2)
     aire.rename(columns={'PM2.5 (ug/m3)': 'PM2,5 (ug/m3)'}, inplace=True)
     return aire
 
@@ -122,17 +121,17 @@ def cargar_introduccion():
     try:
         aire = cargar_datos()
 
-        aire.drop(columns=['Latitud'], inplace=True)
-        aire.drop(columns=['Longitud'], inplace=True)
-        aire.drop(columns=['Localización'], inplace=True)
-        fijas = ['Año', 'Mes', 'Año-Mes']
+        aire.drop(columns=['Latitud', 'Longitud', 'Localización'], inplace=True)
+        #aire.drop(columns=['Longitud'], inplace=True)
+        #aire.drop(columns=['Localización'], inplace=True)
+        fijas = ['Fecha', 'Año', 'Mes']
         aire = aire.groupby(fijas).agg({col: 'mean' for col in aire.columns if col not in fijas}).reset_index()
         anios = st.sidebar.multiselect("Años", sorted(aire['Año'].unique()), sorted(aire['Año'].unique()))
         meses = st.sidebar.multiselect("Meses", sorted(aire['Mes'].unique()), sorted(aire['Mes'].unique()))
-        gases = ['Año', 'Mes', 'Año-Mes', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)']
-        material_particulados = ['Año', 'Mes', 'Año-Mes', 'PM10 (ug/m3)', 'PM2,5 (ug/m3)']
-        variables_meteorologicas = ['Año', 'Mes', 'Año-Mes', 'Humedad (%)', 'UV', 'Presion (Pa)', 'Temperatura (C)']
-        niveles_presion_sonora = ['Año', 'Mes', 'Año-Mes', 'Ruido (dB)']
+        gases = ['Fecha', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)']
+        material_particulados = ['Fecha', 'PM10 (ug/m3)', 'PM2,5 (ug/m3)']
+        variables_meteorologicas = ['Fecha', 'Humedad (%)', 'UV', 'Presion (Pa)', 'Temperatura (C)']
+        niveles_presion_sonora = ['Fecha', 'Ruido (dB)']
 
         if not anios and not meses:
             st.error("Por favor seleccione al menos un año y un mes.")
@@ -141,21 +140,21 @@ def cargar_introduccion():
 
             data_gases = data[gases]
             st.write("## Mediciones de gases (ug/m3)")
-            st.bar_chart(data_gases, x='Año-Mes', y=gases[3:], use_container_width=True)
+            st.bar_chart(data_gases, x='Fecha', y=gases[1:], use_container_width=True)
 
             data_material_particulados = data[material_particulados]
             st.write("## Materiales Particulados (ug/m3)")
-            st.bar_chart(data_material_particulados, x='Año-Mes', y=material_particulados[3:], use_container_width=True)
+            st.bar_chart(data_material_particulados, x='Fecha', y=material_particulados[1:], use_container_width=True)
 
             data_variables_meteorologicas = data[variables_meteorologicas]
             st.write("## Variables Meteorológicas")
-            for variable_meteorologica in variables_meteorologicas[3:]:
+            for variable_meteorologica in variables_meteorologicas[1:]:
                 st.write("### " + variable_meteorologica)
-                st.bar_chart(data_variables_meteorologicas, x='Año-Mes', y=variable_meteorologica, use_container_width=True)
+                st.bar_chart(data_variables_meteorologicas, x='Fecha', y=variable_meteorologica, use_container_width=True)
 
             data_niveles_presion_sonora = data[niveles_presion_sonora]
             st.write("## Niveles Presión Sonora (Ruido)")
-            st.bar_chart(data_niveles_presion_sonora, x='Año-Mes', y=niveles_presion_sonora[3:], use_container_width=True)
+            st.bar_chart(data_niveles_presion_sonora, x='Fecha', y=niveles_presion_sonora[1:], use_container_width=True)
     except Exception as e:
         st.error(
             """
@@ -169,12 +168,12 @@ def cargar_gases():
     st.markdown(f'# {list(page_names_to_funcs.keys())[2]}')
     try:
         aire = cargar_datos()
-        fijas = ['Año', 'Mes', 'Localización', 'Año-Mes', 'Latitud', 'Longitud']
+        fijas = ['Fecha', 'Año', 'Mes', 'Localización', 'Latitud', 'Longitud']
         aire = aire.groupby(fijas).agg({col: 'mean' for col in aire.columns if col not in fijas}).reset_index()
         localizaciones = st.sidebar.multiselect("Localizaciones", sorted(aire['Localización'].unique()), sorted(aire['Localización'].unique()))
         anios = st.sidebar.multiselect("Años", sorted(aire['Año'].unique()), sorted(aire['Año'].unique()))
         meses = st.sidebar.multiselect("Meses", sorted(aire['Mes'].unique()), sorted(aire['Mes'].unique()))
-        gases = ['Año', 'Mes', 'Localización', 'Año-Mes', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)']
+        gases = ['Fecha', 'Localización', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)']
 
         if not localizaciones and not anios and not meses:
             st.error("Por favor seleccione al menos una localización, un año y un mes.")
@@ -182,9 +181,9 @@ def cargar_gases():
             data = aire.loc[aire['Localización'].isin(localizaciones) & aire['Año'].isin(anios) & aire['Mes'].isin(meses)]
 
             data_gases = data[gases]
-            for gas in gases[4:]:
+            for gas in gases[2:]:
                 st.write("## " + gas)
-                st.line_chart(data_gases, x='Año-Mes', y=gas, color="Localización", use_container_width=True)
+                st.line_chart(data_gases, x='Fecha', y=gas, color="Localización", use_container_width=True)
 
     except Exception as e:
         st.error(
@@ -199,12 +198,12 @@ def cargar_material_particulados():
     st.markdown(f'# {list(page_names_to_funcs.keys())[3]}')
     try:
         aire = cargar_datos()
-        fijas = ['Año', 'Mes', 'Localización', 'Año-Mes', 'Latitud', 'Longitud']
+        fijas = ['Fecha', 'Año', 'Mes', 'Localización', 'Latitud', 'Longitud']
         aire = aire.groupby(fijas).agg({col: 'mean' for col in aire.columns if col not in fijas}).reset_index()
         localizaciones = st.sidebar.multiselect("Localizaciones", sorted(aire['Localización'].unique()), sorted(aire['Localización'].unique()))
         anios = st.sidebar.multiselect("Años", sorted(aire['Año'].unique()), sorted(aire['Año'].unique()))
         meses = st.sidebar.multiselect("Meses", sorted(aire['Mes'].unique()), sorted(aire['Mes'].unique()))
-        material_particulados = ['Año', 'Mes', 'Localización', 'Año-Mes', 'PM10 (ug/m3)', 'PM2,5 (ug/m3)']
+        material_particulados = ['Fecha', 'Localización', 'PM10 (ug/m3)', 'PM2,5 (ug/m3)']
 
         if not localizaciones and not anios and not meses:
             st.error("Por favor seleccione al menos una localización, un año y un mes.")
@@ -212,9 +211,9 @@ def cargar_material_particulados():
             data = aire.loc[aire['Localización'].isin(localizaciones) & aire['Año'].isin(anios) & aire['Mes'].isin(meses)]
             
             data_material_particulados = data[material_particulados]
-            for material_particulado in material_particulados[4:]:
+            for material_particulado in material_particulados[2:]:
                 st.write("## " + material_particulado)
-                st.line_chart(data_material_particulados, x='Año-Mes', y=material_particulado, color="Localización", use_container_width=True)
+                st.line_chart(data_material_particulados, x='Fecha', y=material_particulado, color="Localización", use_container_width=True)
     except Exception as e:
         st.error(
             """
@@ -228,12 +227,12 @@ def cargar_variables_meteorologicas():
     st.markdown(f'# {list(page_names_to_funcs.keys())[4]}')
     try:
         aire = cargar_datos()
-        fijas = ['Año', 'Mes', 'Localización', 'Año-Mes', 'Latitud', 'Longitud']
+        fijas = ['Fecha', 'Año', 'Mes', 'Localización', 'Latitud', 'Longitud']
         aire = aire.groupby(fijas).agg({col: 'mean' for col in aire.columns if col not in fijas}).reset_index()
         localizaciones = st.sidebar.multiselect("Localizaciones", sorted(aire['Localización'].unique()), sorted(aire['Localización'].unique()))
         anios = st.sidebar.multiselect("Años", sorted(aire['Año'].unique()), sorted(aire['Año'].unique()))
         meses = st.sidebar.multiselect("Meses", sorted(aire['Mes'].unique()), sorted(aire['Mes'].unique()))
-        variables_meteorologicas = ['Año', 'Mes', 'Año-Mes', 'Localización', 'Humedad (%)', 'UV', 'Presion (Pa)', 'Temperatura (C)']
+        variables_meteorologicas = ['Fecha', 'Localización', 'Humedad (%)', 'UV', 'Presion (Pa)', 'Temperatura (C)']
 
         if not localizaciones and not anios and not meses:
             st.error("Por favor seleccione al menos una localización, un año y un mes.")
@@ -241,9 +240,9 @@ def cargar_variables_meteorologicas():
             data = aire.loc[aire['Localización'].isin(localizaciones) & aire['Año'].isin(anios) & aire['Mes'].isin(meses)]
             
             data_variables_meteorologicas = data[variables_meteorologicas]
-            for variable_meteorologica in variables_meteorologicas[4:]:
+            for variable_meteorologica in variables_meteorologicas[2:]:
                 st.write("## " + variable_meteorologica)
-                st.line_chart(data_variables_meteorologicas, x='Año-Mes', y=variable_meteorologica, color="Localización", use_container_width=True)
+                st.line_chart(data_variables_meteorologicas, x='Fecha', y=variable_meteorologica, color="Localización", use_container_width=True)
     except Exception as e:
         st.error(
             """
@@ -257,12 +256,12 @@ def cargar_niveles_presion_sonora():
     st.markdown(f'# {list(page_names_to_funcs.keys())[5]}')
     try:
         aire = cargar_datos()
-        fijas = ['Año', 'Mes', 'Localización', 'Año-Mes', 'Latitud', 'Longitud']
+        fijas = ['Fecha', 'Año', 'Mes', 'Localización', 'Latitud', 'Longitud']
         aire = aire.groupby(fijas).agg({col: 'mean' for col in aire.columns if col not in fijas}).reset_index()
         localizaciones = st.sidebar.multiselect("Localizaciones", sorted(aire['Localización'].unique()), sorted(aire['Localización'].unique()))
         anios = st.sidebar.multiselect("Años", sorted(aire['Año'].unique()), sorted(aire['Año'].unique()))
         meses = st.sidebar.multiselect("Meses", sorted(aire['Mes'].unique()), sorted(aire['Mes'].unique()))
-        niveles_presion_sonora = ['Año', 'Mes', 'Año-Mes', 'Localización', 'Ruido (dB)']
+        niveles_presion_sonora = ['Fecha', 'Localización', 'Ruido (dB)']
 
         if not localizaciones and not anios and not meses:
             st.error("Por favor seleccione al menos una localización, un año y un mes.")
@@ -270,9 +269,9 @@ def cargar_niveles_presion_sonora():
             data = aire.loc[aire['Localización'].isin(localizaciones) & aire['Año'].isin(anios) & aire['Mes'].isin(meses)]
             
             data_variables_meteorologicas = data[niveles_presion_sonora]
-            for variable_meteorologica in niveles_presion_sonora[4:]:
+            for variable_meteorologica in niveles_presion_sonora[2:]:
                 st.write("## " + variable_meteorologica)
-                st.line_chart(data_variables_meteorologicas, x='Año-Mes', y=variable_meteorologica, color="Localización", use_container_width=True)
+                st.line_chart(data_variables_meteorologicas, x='Fecha', y=variable_meteorologica, color="Localización", use_container_width=True)
     except Exception as e:
         st.error(
             """
