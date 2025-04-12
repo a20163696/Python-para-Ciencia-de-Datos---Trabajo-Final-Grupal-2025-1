@@ -122,8 +122,6 @@ def cargar_introduccion():
         aire = cargar_datos()
 
         aire.drop(columns=['Latitud', 'Longitud', 'Localización'], inplace=True)
-        #aire.drop(columns=['Longitud'], inplace=True)
-        #aire.drop(columns=['Localización'], inplace=True)
         fijas = ['Fecha', 'Año', 'Mes']
         aire = aire.groupby(fijas).agg({col: 'mean' for col in aire.columns if col not in fijas}).reset_index()
         anios = st.sidebar.multiselect("Años", sorted(aire['Año'].unique()), sorted(aire['Año'].unique()))
