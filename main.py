@@ -4,6 +4,24 @@ import pydeck as pdk
 import numpy as np
 import traceback
 
+descripciones = {
+    "Ruido (dB)": "Ruido",
+    "PM10 (ug/m3)": "Material Particulado PM10",
+    "PM2,5 (ug/m3)": "Material Particulado PM2.5",
+    "CO (ug/m3)": "Monóxido de Carbono",
+    "H2S (ug/m3)": "Sulfuro de Hidrógeno",
+    "NO2 (ug/m3)": "Dióxido de Nitrógeno",
+    "O3 (ug/m3)": "Ozono",
+    "SO2 (ug/m3)": "Dióxido de Azufre",
+    "Humedad (%)": "Humedad Relativa",
+    "UV": "Radiación UV",
+    "Presion (Pa)": "Presión Atmosférica",
+    "Temperatura (C)": "Temperatura",
+    "Gases (ug/m3)": "Gases",
+    "Material Particulado": "Material Particulado",
+    "Variables Meteorológicas": "Variables Meteorológicas",
+    "Niveles de Presión Sonora": "Niveles de Presión Sonora",
+}
 
 def localizar(df):
     ubicaciones = [
@@ -44,6 +62,7 @@ def agregar_grafico(elementos, dataset):
             columna = columna1
         with columna:
             st.write("### " + elemento)
+            st.write(descripciones[elemento])
             st.line_chart(dataset, x='Fecha', y=elemento, color="Ubicación", use_container_width=True)
         n+=1
 
@@ -155,7 +174,7 @@ def cargar_resumen():
         st.sidebar.header("Filtros", divider="gray")
         inicio = np.datetime64(st.sidebar.date_input("Fecha de Inicio", value=aire['Fecha'].min()), 'ns')
         fin = np.datetime64(st.sidebar.date_input("Fecha de Fin", value=aire['Fecha'].max()), 'ns')
-        gases = ['Fecha', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)']
+        gases = ['Fecha', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)', 'SO2 (ug/m3)']
         material_particulados = ['Fecha', 'PM10 (ug/m3)', 'PM2,5 (ug/m3)']
         variables_meteorologicas = ['Fecha', 'Humedad (%)', 'UV', 'Presion (Pa)', 'Temperatura (C)']
         niveles_presion_sonora = ['Fecha', 'Ruido (dB)']
@@ -167,14 +186,17 @@ def cargar_resumen():
 
             data_gases = data[gases]
             st.write("### Gases (ug/m3)")
+            st.write(descripciones["Gases (ug/m3)"])
             st.bar_chart(data_gases, x='Fecha', y=gases[1:], use_container_width=True)
 
             data_material_particulados = data[material_particulados]
             st.write("### Materiales Particulados (ug/m3)")
+            st.write(descripciones["Material Particulado"])
             st.bar_chart(data_material_particulados, x='Fecha', y=material_particulados[1:], use_container_width=True)
 
             data_variables_meteorologicas = data[variables_meteorologicas]
             st.write("### Variables Meteorológicas")
+            st.write(descripciones["Variables Meteorológicas"])
             columna1, columna2 = st.columns(2)
             n = 1
             for variable_meteorologica in variables_meteorologicas[1:]:
@@ -189,6 +211,7 @@ def cargar_resumen():
 
             data_niveles_presion_sonora = data[niveles_presion_sonora]
             st.write("### Niveles Presión Sonora (Ruido)")
+            st.write(descripciones["Niveles de Presión Sonora"])
             st.bar_chart(data_niveles_presion_sonora, x='Fecha', y=niveles_presion_sonora[1:], use_container_width=True)
     except Exception as e:
         imprimir_error(traceback.print_exc(e))
@@ -203,7 +226,7 @@ def cargar_gases():
         ubicaciones = st.sidebar.multiselect("Ubicaciones", sorted(aire['Ubicación'].unique()), sorted(aire['Ubicación'].unique()))
         inicio = np.datetime64(st.sidebar.date_input("Fecha de Inicio", value=aire['Fecha'].min()), 'ns')
         fin = np.datetime64(st.sidebar.date_input("Fecha de Fin", value=aire['Fecha'].max()), 'ns')
-        gases = ['Fecha', 'Ubicación', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)']
+        gases = ['Fecha', 'Ubicación', 'CO (ug/m3)', 'H2S (ug/m3)', 'NO2 (ug/m3)', 'O3 (ug/m3)', 'SO2 (ug/m3)']
 
         if not ubicaciones and not inicio and not fin:
             st.error("Por favor seleccione al menos una localización, una fecha de inicio y una fecha de fin.")
@@ -279,6 +302,7 @@ def cargar_niveles_presion_sonora():
             data_variables_meteorologicas = data[niveles_presion_sonora]
 
             st.write("### " + niveles_presion_sonora[2:][0])
+            st.write(descripciones[niveles_presion_sonora[2:][0]])
             st.line_chart(data_variables_meteorologicas, x='Fecha', y=niveles_presion_sonora[2:][0], color="Ubicación", use_container_width=True)
     except Exception as e:
         imprimir_error(traceback.print_exc(e))
