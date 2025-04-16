@@ -5,22 +5,22 @@ import numpy as np
 import traceback
 
 descripciones = {
-    "Ruido (dB)": "Ruido",
-    "PM10 (ug/m3)": "Material Particulado PM10",
-    "PM2,5 (ug/m3)": "Material Particulado PM2.5",
-    "CO (ug/m3)": "Monóxido de Carbono",
-    "H2S (ug/m3)": "Sulfuro de Hidrógeno",
-    "NO2 (ug/m3)": "Dióxido de Nitrógeno",
-    "O3 (ug/m3)": "Ozono",
-    "SO2 (ug/m3)": "Dióxido de Azufre",
-    "Humedad (%)": "Humedad Relativa",
-    "UV": "Radiación UV",
-    "Presion (Pa)": "Presión Atmosférica",
-    "Temperatura (C)": "Temperatura",
-    "Gases (ug/m3)": "Gases",
-    "Material Particulado": "Material Particulado",
-    "Variables Meteorológicas": "Variables Meteorológicas",
-    "Niveles de Presión Sonora": "Niveles de Presión Sonora",
+    "Ruido (dB)": "El ruido se mide en decibelios (dB), los niveles de ruido que no son perjudiciales para la audición son generalmente inferiores a los 85 dB, aunque esto depende del tiempo de exposición y si se utilizan o no protecciones auditivas.",
+    "PM10 (ug/m3)": "Partículas atmosférica con un diámetro igual o inferior a 10 micrómetros (μm). Estas partículas pueden ser tanto sólidas como líquidas y están formadas principalmente por compuestos inorgánicos, metales pesados y material orgánico asociado a partículas de carbono (hollín). La concentración de PM10 se mide en microgramos por metro cúbico (μg/m³). Según la normativa europea se debe garantizar que no se superen más de 35 días al año el valor límite diario de 50 μg/m³.",
+    "PM2,5 (ug/m3)": "Partículas atmosféricas con un diámetro menor a 2,5 micrómetros (μm) que pueden tener efectos negativos sobre la salud humana. Según la Organización Mundial de la Salud (OMS), los valores guía de protección para la salud establecen que 10 μg/m3 es el nivel más bajo a partir del cual se ha detectado una asociación entre efectos cardiopulmonares y mortalidad por cáncer de pulmón debido a la exposición prolongada a PM2,5.",
+    "CO (ug/m3)": "Monóxido de carbono es un gas incoloro, sin olor y venenoso que se produce por la combustión incompleta de combustibles como el carbón, la madera, el aceite, el queroseno, el propano y el gas natural.",
+    "H2S (ug/m3)": "Sulfuro de hidrógeno es un gas incoloro con un olor característico a huevo podrido. Este gas es inflamable en concentraciones entre 4 y 46 porciento en el aire y es tóxico en altas concentraciones.",
+    "NO2 (ug/m3)": "Dióxido de nitrógeno es un gas tóxico que se forma principalmente por la combustión a altas temperaturas, especialmente en motores diésel y en instalaciones industriales de alta temperatura.",
+    "O3 (ug/m3)": "Ozono se forma cuando las moléculas de oxígeno son excitadas lo suficiente para descomponerse en oxígeno atómico y las colisiones entre los diferentes átomos generan la formación del ozono.",
+    "SO2 (ug/m3)": "Dióxido de azufre es un gas incoloro y extremadamente tóxico que se forma al quemar y fundir combustibles fósiles y minerales que contienen azufre, como el carbón, el petróleo, el diésel o el gas natural.",
+    "Humedad (%)": "La humedad es la cantidad de vapor de agua presente en el aire, es la relación entre la cantidad de vapor de agua real que contiene el aire y la cantidad máxima que podría contener a una temperatura determinada.",
+    "UV": "Radiación ultravioleta se encuentra entre el extremo violeta del espectro visible y los rayos X, y que provoca reacciones químicas de gran repercusión biológica.",
+    "Presion (Pa)": "Presión Atmosférica se define como la fuerza por unidad de área y su unidad estándar es el pascal (Pa) en el Sistema Internacional de Unidades.",
+    "Temperatura (C)": "La temperatura en grados Celsius (°C) es una unidad de medida de calor o frío que se utiliza comúnmente en el sistema métrico.",
+    "Gases (ug/m3)": "Gases medidos en microgramos por metro cúbico (ug/m3)",
+    "Material Particulado": "Material Particulado medido en microgramos por metro cúbico (ug/m3)",
+    "Variables Meteorológicas": "Variables Meteorológicas medidas en diferentes unidades",
+    "Niveles de Presión Sonora": "Niveles de Presión Sonora medidos en decibelios (dB)",
 }
 
 def localizar(df):
