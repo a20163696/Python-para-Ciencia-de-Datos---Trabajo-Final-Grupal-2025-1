@@ -4,8 +4,8 @@ import pydeck as pdk
 import numpy as np
 import traceback
 
-descripciones = {
-    "Ruido (dB)": "El ruido se mide en decibelios (dB), los niveles de ruido que no son perjudiciales para la audición son generalmente inferiores a los 85 dB, aunque esto depende del tiempo de exposición y si se utilizan o no protecciones auditivas.",
+descripciones = { 
+    "Ruido (dB)": "El ruido 2 se mide en decibelios (dB), los niveles de ruido que no son perjudiciales para la audición son generalmente inferiores a los 85 dB, aunque esto depende del tiempo de exposición y si se utilizan o no protecciones auditivas.",
     "PM10 (ug/m3)": "Partículas atmosférica con un diámetro igual o inferior a 10 micrómetros (μm). Estas partículas pueden ser tanto sólidas como líquidas y están formadas principalmente por compuestos inorgánicos, metales pesados y material orgánico asociado a partículas de carbono (hollín). La concentración de PM10 se mide en microgramos por metro cúbico (μg/m³). Según la normativa europea se debe garantizar que no se superen más de 35 días al año el valor límite diario de 50 μg/m³.",
     "PM2,5 (ug/m3)": "Partículas atmosféricas con un diámetro menor a 2,5 micrómetros (μm) que pueden tener efectos negativos sobre la salud humana. Según la Organización Mundial de la Salud (OMS), los valores guía de protección para la salud establecen que 10 μg/m3 es el nivel más bajo a partir del cual se ha detectado una asociación entre efectos cardiopulmonares y mortalidad por cáncer de pulmón debido a la exposición prolongada a PM2,5.",
     "CO (ug/m3)": "Monóxido de carbono es un gas incoloro, sin olor y venenoso que se produce por la combustión incompleta de combustibles como el carbón, la madera, el aceite, el queroseno, el propano y el gas natural.",
