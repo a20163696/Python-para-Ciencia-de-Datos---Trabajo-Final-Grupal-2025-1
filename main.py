@@ -649,9 +649,9 @@ paginas_a_funciones = {
     "Material Particulado": cargar_material_particulados,
     "Variables Meteorológicas": cargar_variables_meteorologicas,
     "Niveles de Presión Sonora": cargar_niveles_presion_sonora,
-    "Análisis de Dispersión": cargar_pagina_dispersion,
     "Comparativa por Ubicación": cargar_comparativa_ubicacion,
-    "Mapa de Calor Diario": cargar_pagina_heatmap, # <-- Add the new page
+    "Análisis de Dispersión": cargar_pagina_dispersion,
+    "Mapa de Calor Diario": cargar_pagina_heatmap,
 }
 
 st.sidebar.header("Calidad de Aire QAIRA", divider="blue")
