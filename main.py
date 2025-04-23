@@ -3,6 +3,9 @@ import pandas as pd
 import pydeck as pdk
 import numpy as np
 import traceback
+import plotly.graph_objects as go # Importar go
+from plotly_calplot import calplot # <-- Importar calplot
+import calendar # <-- Para nombres de meses
 #import plotly.express as px
 
 descripciones = { 
@@ -459,6 +462,134 @@ def cargar_comparativa_ubicacion():
     except Exception as e:
         imprimir_error("Error al cargar la página Comparativa por Ubicación", e)
 
+def cargar_pagina_calmap():
+    st.header("Mapa de Calor Calendario Anual", divider="blue")
+    st.write("""
+    Visualiza la intensidad diaria de una variable a lo largo de un año completo.
+    Los colores más intensos indican valores más altos de la variable seleccionada.
+    Permite identificar patrones estacionales, semanales o días específicos con valores anómalos.
+    Los datos mostrados son el **promedio diario de todas las ubicaciones**.
+    """)
+
+    try:
+        aire_full = cargar_datos() # Carga los datos agrupados por día y ubicación
+        if aire_full.empty:
+            st.warning("No hay datos disponibles para mostrar.")
+            return
+
+        # --- Calcular Promedio Diario General ---
+        # 1. Identificar columnas numéricas (excluyendo Lat/Lon si aún están)
+        columnas_numericas = sorted([
+            col for col in aire_full.columns
+            if pd.api.types.is_numeric_dtype(aire_full[col]) and col not in ['Latitud', 'Longitud']
+        ])
+        if not columnas_numericas:
+            st.warning("No se encontraron variables numéricas para promediar.")
+            return
+
+        # 2. Agrupar por Fecha (diaria) y calcular la media de las numéricas
+        try:
+            # Asegurarse que 'Fecha' está como datetime
+            aire_full['Fecha'] = pd.to_datetime(aire_full['Fecha'])
+            # Agrupar solo si hay columnas numéricas
+            aire_daily_avg = aire_full.groupby('Fecha')[columnas_numericas].mean().reset_index()
+        except KeyError as ke:
+             st.error(f"Error al agrupar: La columna {ke} no se encontró después de cargar los datos.")
+             return
+        except Exception as agg_e:
+             st.error(f"Error inesperado durante la agregación diaria: {agg_e}")
+             st.code(traceback.format_exc())
+             return
+
+
+        if aire_daily_avg.empty:
+            st.warning("No se pudieron calcular los promedios diarios.")
+            return
+
+        # --- Filtros en Sidebar ---
+        st.sidebar.header("Filtros (Calendario)", divider="gray")
+
+        # Selector de Variable
+        # Filtrar nuevamente las columnas numéricas DESPUÉS de la agregación diaria
+        variables_disponibles = sorted([
+            col for col in aire_daily_avg.columns
+            if pd.api.types.is_numeric_dtype(aire_daily_avg[col])
+        ])
+        if not variables_disponibles:
+             st.warning("No hay variables numéricas disponibles después de promediar.")
+             return
+        variable_seleccionada = st.sidebar.selectbox(
+            "Seleccione Variable",
+            variables_disponibles,
+            key="calmap_variable"
+        )
+
+        # Selector de Año
+        available_years = sorted(aire_daily_avg['Fecha'].dt.year.unique())
+        if not available_years:
+             st.warning("No se encontraron años en los datos.")
+             return
+        selected_year = st.sidebar.selectbox(
+            "Seleccione Año",
+            available_years,
+            index=len(available_years)-1, # Seleccionar el último año por defecto
+            key="calmap_year"
+        )
+
+        # --- Preparar Datos para Calplot ---
+        # Filtrar por año
+        year_data = aire_daily_avg[aire_daily_avg['Fecha'].dt.year == selected_year].copy()
+
+        if year_data.empty:
+            st.warning(f"No hay datos disponibles para el año {selected_year}.")
+            return
+
+        # Crear la Serie requerida por calplot (Índice Datetime, Valores de la variable)
+        # Asegurarse que no hay fechas duplicadas (no debería si agrupamos bien)
+        year_data = year_data.drop_duplicates(subset='Fecha')
+        data_series = year_data.set_index('Fecha')[variable_seleccionada]
+
+        # Eliminar NaNs si calplot no los maneja bien (opcional, probar primero sin esto)
+        data_series.dropna(inplace=True)
+
+        if data_series.empty:
+            st.warning(f"No hay datos válidos (no nulos) para '{variable_seleccionada}' en el año {selected_year}.")
+            return
+
+        # --- Generar y Mostrar el Gráfico Calplot ---
+        st.write(f"### Intensidad Diaria de **{variable_seleccionada}** en {selected_year}")
+
+        try:
+            # Crear la figura calplot
+            fig = calplot(
+                data_series,
+                cmap='viridis', # Puedes cambiar el mapa de color (e.g., 'YlGnBu', 'Reds', 'coolwarm')
+                figsize=(1000, 250), # Ajustar tamaño si es necesario
+                month_lines_color="#D3D3D3", # Color de líneas entre meses
+                month_lines_width=2,
+                year_label_fontsize=14,
+                month_label_fontsize=10
+            )
+
+            # Añadir un título más descriptivo a la figura de Plotly
+            fig.update_layout(
+                title_text=f"Calendario de {variable_seleccionada} - Año {selected_year}",
+                title_x=0.5 # Centrar título
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        except ImportError:
+             st.error("La librería 'plotly_calplot' no está instalada. Ejecuta: pip install plotly_calplot")
+        except Exception as plot_err:
+             st.error(f"Ocurrió un error al generar el mapa de calor del calendario: {plot_err}")
+             st.code(traceback.format_exc())
+
+
+    except Exception as e:
+        # Usar la función imprimir_error corregida
+        imprimir_error("Error general al cargar la página del Mapa de Calor Calendario", e)
+
 paginas_a_funciones = {
     "Inicio": cargar_inicio,
     "Resumen": cargar_resumen,
@@ -468,6 +599,7 @@ paginas_a_funciones = {
     "Niveles de Presión Sonora": cargar_niveles_presion_sonora,
     "Análisis de Dispersión": cargar_pagina_dispersion,
     "Comparativa por Ubicación": cargar_comparativa_ubicacion,
+    "Calendario Anual": cargar_pagina_calmap,
 }
 
 st.sidebar.header("Calidad de Aire QAIRA", divider="blue")
