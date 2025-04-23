@@ -396,6 +396,46 @@ def cargar_pagina_dispersion():
     except Exception as e:
         imprimir_error("Error al cargar la página de análisis de dispersión", e)
 
+def cargar_comparativa_ubicacion():
+    st.header("Comparativa por Ubicación", divider="blue")
+    st.write("Compare la distribución de una variable ambiental entre diferentes ubicaciones.")
+
+    try:
+        aire = cargar_datos()
+        if aire.empty:
+            st.warning("No hay datos disponibles.")
+            return
+
+        # Variables categóricas y numéricas
+        ubicaciones_disponibles = sorted(aire['Ubicación'].unique())
+        columnas_numericas = sorted([
+            col for col in aire.columns
+            if aire[col].dtype in ['float64', 'int64'] and col not in ['Latitud', 'Longitud']
+        ])
+
+        st.sidebar.header("Filtros (Comparativa)", divider="gray")
+        ubicaciones = st.sidebar.multiselect("Ubicaciones", ubicaciones_disponibles, ubicaciones_disponibles, key="comp_ubicaciones")
+        variable = st.sidebar.selectbox("Variable a Comparar", columnas_numericas)
+
+        if not ubicaciones or not variable:
+            st.warning("Seleccione al menos una ubicación y una variable.")
+            return
+
+        data = aire[aire['Ubicación'].isin(ubicaciones)][['Ubicación', variable]].dropna()
+
+        if data.empty:
+            st.warning("No hay datos para la variable y ubicaciones seleccionadas.")
+            return
+
+        # Boxplot
+        st.write(f"### Distribución de **{variable}** por Ubicación")
+        fig = px.box(data, x='Ubicación', y=variable, color='Ubicación', points="all")
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.caption("Este gráfico muestra la distribución estadística de la variable seleccionada para cada ubicación. Incluye mediana, cuartiles y posibles valores atípicos.")
+
+    except Exception as e:
+        imprimir_error("Error al cargar la página Comparativa por Ubicación", e)
 
 paginas_a_funciones = {
     "Inicio": cargar_inicio,
@@ -405,6 +445,7 @@ paginas_a_funciones = {
     "Variables Meteorológicas": cargar_variables_meteorologicas,
     "Niveles de Presión Sonora": cargar_niveles_presion_sonora,
     "Análisis de Dispersión": cargar_pagina_dispersion, # <-- Nueva página añadida aquí
+    "Comparativa por Ubicación": cargar_comparativa_ubicacion,
 }
 
 st.sidebar.header("Calidad de Aire QAIRA", divider="blue")
