@@ -6,7 +6,7 @@ import traceback
 import plotly.graph_objects as go # Importar go
 from plotly_calplot import calplot # <-- Importar calplot
 import calendar # <-- Para nombres de meses
-#import plotly.express as px
+import plotly.express as px
 
 descripciones = { 
     "Ruido (dB)": "El ruido 2 se mide en decibelios (dB), los niveles de ruido que no son perjudiciales para la audición son generalmente inferiores a los 85 dB, aunque esto depende del tiempo de exposición y si se utilizan o no protecciones auditivas.",
