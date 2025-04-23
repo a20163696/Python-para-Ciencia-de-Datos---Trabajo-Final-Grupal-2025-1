@@ -4,7 +4,10 @@ import pydeck as pdk
 import numpy as np
 import traceback
 
-
+import calplot # <-- Add this
+import matplotlib.pyplot as plt # <-- Add this
+import io # Already present in Colab code, good practice to ensure it's there
+import plotly.express as px # <-- Add this for the boxplot page
 
 descripciones = { 
     "Ruido (dB)": "El ruido 2 se mide en decibelios (dB), los niveles de ruido que no son perjudiciales para la audición son generalmente inferiores a los 85 dB, aunque esto depende del tiempo de exposición y si se utilizan o no protecciones auditivas.",
