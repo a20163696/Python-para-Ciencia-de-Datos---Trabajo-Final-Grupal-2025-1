@@ -3,7 +3,7 @@ import pandas as pd
 import pydeck as pdk
 import numpy as np
 import traceback
-import plotly.express as px
+#import plotly.express as px
 import plotly.graph_objects as go # Importar go
 from plotly_calplot import calplot # <-- Importar calplot
 import calendar # <-- Para nombres de meses
