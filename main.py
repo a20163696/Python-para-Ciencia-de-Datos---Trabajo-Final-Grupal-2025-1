@@ -309,7 +309,28 @@ def cargar_niveles_presion_sonora():
 
 def cargar_pagina_dispersion():
     st.header("Análisis de Dispersión", divider="blue")
-    st.write(descripciones.get("Análisis de Dispersión", "Explore la relación entre dos variables."))
+
+    # --- Define el nuevo texto descriptivo usando Markdown ---
+    descripcion_dispersion_markdown = """
+**Análisis de Dispersión: ¡Descubre Conexiones Ocultas!** 🕵️‍♀️💨
+
+Explora cómo interactúan dos variables del aire que tú elijas. Cada punto en el gráfico es el **promedio diario** de esas variables para una **ubicación específica**. ¿Ves patrones visuales?
+
+*   **Suben Juntos (↗):** Posible relación positiva.
+*   **Uno Sube, Otro Baja (↘):** Posible relación negativa.
+*   **Dispersos (░):** Poca o ninguna relación *lineal*.
+
+**Correlación de Pearson (`r`):** Este número (-1 a +1) te da una pista sobre la fuerza de esa relación lineal:
+*   `r ≈ +1`: Fuerte Positiva.
+*   `r ≈ -1`: Fuerte Negativa.
+*   `r ≈ 0`: Sin relación lineal clara.
+
+**¡Importante!** Correlación no siempre significa que una variable *cause* la otra.
+
+**¡Tu Turno!** Selecciona variables para los ejes X e Y. Usa los filtros de ubicación y fecha. ¿Qué relación inesperada encuentras entre, por ejemplo, `Ruido` y `PM10`? ¿O entre `Temperatura` y `O3`? ¡Busca *insights* y sorpréndete con los datos!
+"""
+    # --- Usa st.markdown para mostrar el texto formateado ---
+    st.markdown(descripcion_dispersion_markdown) # Reemplaza la línea anterior
 
     try:
         aire = cargar_datos()
@@ -444,7 +465,7 @@ paginas_a_funciones = {
     "Material Particulado": cargar_material_particulados,
     "Variables Meteorológicas": cargar_variables_meteorologicas,
     "Niveles de Presión Sonora": cargar_niveles_presion_sonora,
-    "Análisis de Dispersión": cargar_pagina_dispersion, # <-- Nueva página añadida aquí
+    "Análisis de Dispersión": cargar_pagina_dispersion,
     "Comparativa por Ubicación": cargar_comparativa_ubicacion,
 }
 
