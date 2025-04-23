@@ -463,6 +463,184 @@ def cargar_comparativa_ubicacion():
     except Exception as e:
         imprimir_error("Error al cargar la página Comparativa por Ubicación", e)
 
+def cargar_pagina_heatmap():
+    st.header("Mapa de Calor Diario por Variable", divider="blue")
+    st.markdown("""
+    Este mapa de calor visualiza el valor diario de una variable seleccionada a lo largo del tiempo.
+    Cada celda coloreada representa un día, permitiendo identificar patrones estacionales o tendencias.
+
+    **Instrucciones:**
+    1.  **Seleccione la Variable:** Elija la métrica ambiental que desea visualizar en el mapa de calor.
+    2.  **Elija el Método de Agregación:** Decida cómo combinar los datos horarios/múltiples sensores para obtener un valor diario (`mean`, `median`, `max`, `min`, `sum`). El `mean` (promedio) es común.
+    3.  **Seleccione un Colormap:** Elija la paleta de colores para el mapa.
+    4.  **Use los Filtros Laterales:** Filtre por `Ubicaciones` y `Fecha` en la barra lateral para refinar los datos mostrados. El valor diario se calculará sobre las ubicaciones seleccionadas.
+    """)
+
+    try:
+        aire = cargar_datos()
+        if aire.empty:
+            st.warning("No hay datos base disponibles para cargar.")
+            return
+
+        # --- Configuration Widgets for Heatmap (in main area) ---
+        columnas_numericas_heatmap = sorted([
+            col for col in aire.columns
+            if aire[col].dtype in ['float64', 'int64']
+            and col not in ['Latitud', 'Longitud'] # Exclude non-sensical heatmap variables
+        ])
+        if not columnas_numericas_heatmap:
+            st.error("No se encontraron columnas numéricas adecuadas en los datos cargados.")
+            return
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            variable_seleccionada = st.selectbox(
+                "Seleccione Variable para Mapa de Calor:",
+                columnas_numericas_heatmap,
+                index=columnas_numericas_heatmap.index('H2S (ug/m3)') if 'H2S (ug/m3)' in columnas_numericas_heatmap else 0,
+                key="heatmap_variable"
+            )
+        with col2:
+            metodo_agregacion = st.selectbox(
+                "Método de Agregación Diario:",
+                ['mean', 'median', 'max', 'min', 'sum'],
+                index=0, # Default to 'mean'
+                key="heatmap_agg"
+            )
+        with col3:
+            mapas_color_disponibles = plt.colormaps() # Get available matplotlib colormaps
+            colormap = st.selectbox(
+                "Colormap:",
+                mapas_color_disponibles,
+                index=mapas_color_disponibles.index('viridis') if 'viridis' in mapas_color_disponibles else 0,
+                key="heatmap_cmap"
+            )
+
+        # --- Apply Sidebar Filters (Location and Date) ---
+        # Get filters from the sidebar (ensure these widgets exist in your main app structure)
+        # Using placeholder logic if sidebar widgets aren't defined exactly like this yet
+        ubicaciones_disponibles = sorted(aire['Ubicación'].unique())
+        default_ubicaciones = ubicaciones_disponibles
+        if 'ubicaciones' not in st.session_state: # Check if already created by another page
+             st.session_state.ubicaciones = default_ubicaciones
+
+        ubicaciones = st.sidebar.multiselect(
+             "Ubicaciones",
+             ubicaciones_disponibles,
+             default=st.session_state.ubicaciones, # Use state to remember selection across pages
+             key="sidebar_ubicaciones" # Use a consistent key if shared across pages
+        )
+        st.session_state.ubicaciones = ubicaciones # Update state
+
+
+        fecha_min_global = aire['Fecha'].min().date()
+        fecha_max_global = aire['Fecha'].max().date()
+
+        # Use session state for date persistence if desired
+        if 'fecha_inicio' not in st.session_state:
+            st.session_state.fecha_inicio = fecha_min_global
+        if 'fecha_fin' not in st.session_state:
+            st.session_state.fecha_fin = fecha_max_global
+
+        inicio = np.datetime64(st.sidebar.date_input(
+             "Fecha de Inicio",
+             value=st.session_state.fecha_inicio,
+             min_value=fecha_min_global,
+             max_value=fecha_max_global,
+             key='sidebar_inicio'
+         ), 'ns')
+        fin = np.datetime64(st.sidebar.date_input(
+             "Fecha de Fin",
+             value=st.session_state.fecha_fin,
+             min_value=fecha_min_global,
+             max_value=fecha_max_global,
+             key='sidebar_fin'
+         ), 'ns')
+
+        # Update session state
+        st.session_state.fecha_inicio = pd.to_datetime(inicio).date()
+        st.session_state.fecha_fin = pd.to_datetime(fin).date()
+
+
+        if not ubicaciones:
+            st.error("Por favor seleccione al menos una localización en la barra lateral.")
+            return
+        if inicio > fin:
+             st.error("La fecha de inicio no puede ser posterior a la fecha de fin (barra lateral).")
+             return
+
+        # Filter data based on sidebar selections
+        data_filtrada = aire[
+            aire['Ubicación'].isin(ubicaciones) &
+            aire['Fecha'].between(inicio, fin)
+        ].copy() # Use copy to avoid warnings
+
+        if data_filtrada.empty:
+            st.warning("No hay datos disponibles para las ubicaciones y fechas seleccionadas.")
+            return
+
+        # --- Prepare Data Specifically for Calplot ---
+        # Ensure the selected column is numeric, coercing errors
+        if variable_seleccionada not in data_filtrada.columns:
+             st.error(f"Error interno: La columna '{variable_seleccionada}' no se encontró después de filtrar.")
+             return
+
+        # Important: Convert to numeric *before* aggregation
+        data_filtrada[variable_seleccionada] = pd.to_numeric(data_filtrada[variable_seleccionada], errors='coerce')
+
+        # Drop rows where the specific variable is NaN *before* grouping
+        data_filtrada.dropna(subset=[variable_seleccionada], inplace=True)
+
+        if data_filtrada.empty:
+             st.warning(f"No quedaron datos para '{variable_seleccionada}' después de eliminar valores no numéricos/vacíos en el rango seleccionado.")
+             return
+
+        # Aggregate daily values across selected locations
+        # Group by date ONLY, select the variable, and aggregate
+        datos_calor = data_filtrada.groupby('Fecha')[variable_seleccionada].agg(metodo_agregacion)
+
+        # Drop potential NaNs resulting from aggregation (e.g., if a day had no valid data left)
+        datos_calor.dropna(inplace=True)
+
+        if datos_calor.empty:
+            st.warning(f"No quedaron datos para graficar para '{variable_seleccionada}' con el método '{metodo_agregacion}' después de la agregación diaria.")
+            return
+
+        # --- Generate and Display Heatmap ---
+        st.write(f"### Mapa de Calor: {variable_seleccionada} ({metodo_agregacion.capitalize()})")
+        st.write(f"Datos desde {datos_calor.index.min().strftime('%Y-%m-%d')} hasta {datos_calor.index.max().strftime('%Y-%m-%d')}")
+        st.write(f"Número de días con datos para graficar: {len(datos_calor)}")
+
+        try:
+            # Calplot creates a matplotlib figure and axes
+            fig, ax = calplot.calplot(
+                data=datos_calor,        # Pass the aggregated Series
+                how=None,                # Aggregation was already done manually
+                cmap=colormap,           # Use selected colormap
+                figsize=(15, 4),         # Adjust figure size as needed
+                suptitle=None            # Title is handled by st.write above
+                # yearlabel_kws={'fontsize': 12}, # Example customization
+                # daylabels=['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] # Spanish day labels
+            )
+
+            # Display the matplotlib figure in Streamlit
+            st.pyplot(fig)
+
+        except Exception as plot_err:
+             st.error(f"Error al generar el gráfico de mapa de calor: {plot_err}")
+             # Optionally print traceback for debugging
+             # st.error("Traceback:")
+             # st.code(traceback.format_exc())
+
+
+    except FileNotFoundError:
+         imprimir_error("No se encontró el archivo 'data/aire.csv'. Asegúrate de que esté en la ubicación correcta.")
+    except KeyError as ke:
+         imprimir_error(f"Error: No se encontró una columna esperada en los datos: {ke}. Verifica el archivo CSV.")
+    except Exception as e:
+        # Use your existing error printing function
+        st.error(f"Ocurrió un error inesperado al cargar la página del mapa de calor:")
+        st.exception(e) # st.exception shows the traceback nicely
 
 paginas_a_funciones = {
     "Inicio": cargar_inicio,
@@ -473,6 +651,7 @@ paginas_a_funciones = {
     "Niveles de Presión Sonora": cargar_niveles_presion_sonora,
     "Análisis de Dispersión": cargar_pagina_dispersion,
     "Comparativa por Ubicación": cargar_comparativa_ubicacion,
+    "Mapa de Calor Diario": cargar_pagina_heatmap, # <-- Add the new page
 }
 
 st.sidebar.header("Calidad de Aire QAIRA", divider="blue")
