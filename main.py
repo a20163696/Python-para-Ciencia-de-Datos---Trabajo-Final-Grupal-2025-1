@@ -307,6 +307,96 @@ def cargar_niveles_presion_sonora():
     except Exception as e:
         imprimir_error(traceback.print_exc(e))
 
+def cargar_pagina_dispersion():
+    st.header("Análisis de Dispersión", divider="blue")
+    st.write(descripciones.get("Análisis de Dispersión", "Explore la relación entre dos variables."))
+
+    try:
+        aire = cargar_datos()
+        if aire.empty:
+            st.warning("No hay datos disponibles para mostrar.")
+            return
+
+        st.sidebar.header("Filtros (Dispersión)", divider="gray")
+        # Filtros estándar de ubicación y fecha
+        ubicaciones_disponibles = sorted(aire['Ubicación'].unique())
+        default_ubicaciones = ubicaciones_disponibles
+        ubicaciones = st.sidebar.multiselect("Ubicaciones", ubicaciones_disponibles, default=default_ubicaciones, key="disp_ubicaciones")
+
+        fecha_min = aire['Fecha'].min().date()
+        fecha_max = aire['Fecha'].max().date()
+        inicio = np.datetime64(st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max, key='disp_inicio'), 'ns')
+        fin = np.datetime64(st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max, key='disp_fin'), 'ns')
+
+        if not ubicaciones:
+            st.error("Por favor seleccione al menos una localización.")
+            return
+        if inicio > fin:
+             st.error("La fecha de inicio no puede ser posterior a la fecha de fin.")
+             return
+
+        # Filtrar datos según selecciones
+        data_filtrada = aire[aire['Ubicación'].isin(ubicaciones) & aire['Fecha'].between(inicio, fin)].copy() # Usar .copy() para evitar SettingWithCopyWarning
+
+        if data_filtrada.empty:
+            st.warning("No hay datos para las selecciones realizadas.")
+            return
+
+        # --- Selección de variables para los ejes ---
+        columnas_numericas = sorted([col for col in data_filtrada.columns if data_filtrada[col].dtype in ['int64', 'float64'] and col not in ['Latitud', 'Longitud']])
+        if not columnas_numericas:
+             st.warning("No se encontraron columnas numéricas adecuadas para el gráfico de dispersión.")
+             return
+
+        col1, col2 = st.columns(2)
+        with col1:
+            x_axis = st.selectbox("Seleccione Variable para Eje X:", columnas_numericas, index=columnas_numericas.index('Temperatura (C)') if 'Temperatura (C)' in columnas_numericas else 0 )
+        with col2:
+            # Asegurar que la variable Y no sea la misma que X por defecto si es posible
+            default_y_index = 0
+            if x_axis in columnas_numericas:
+                if 'Humedad (%)' in columnas_numericas and 'Humedad (%)' != x_axis:
+                    default_y_index = columnas_numericas.index('Humedad (%)')
+                elif 'PM2,5 (ug/m3)' in columnas_numericas and 'PM2,5 (ug/m3)' != x_axis:
+                     default_y_index = columnas_numericas.index('PM2,5 (ug/m3)')
+                elif len(columnas_numericas) > 1:
+                     default_y_index = 1 if x_axis == columnas_numericas[0] else 0 # Elegir la siguiente o la primera
+
+
+            y_axis = st.selectbox("Seleccione Variable para Eje Y:", columnas_numericas, index=default_y_index)
+
+        # --- Mostrar gráfico de dispersión ---
+        if x_axis and y_axis:
+            if x_axis == y_axis:
+                st.warning("Seleccione variables diferentes para el eje X y el eje Y.")
+            else:
+                st.write(f"### Dispersión: {y_axis} vs {x_axis}")
+                # Añadir tooltips opcionales (requiere ajustar el formato si es necesario)
+                # data_filtrada['tooltip'] = data_filtrada.apply(lambda row: f"Fecha: {row['Fecha'].strftime('%Y-%m-%d')}<br>Ubicación: {row['Ubicación']}<br>{x_axis}: {row[x_axis]:.2f}<br>{y_axis}: {row[y_axis]:.2f}", axis=1)
+
+                st.scatter_chart(
+                    data_filtrada,
+                    x=x_axis,
+                    y=y_axis,
+                    color="Ubicación", # Colorea los puntos según la ubicación
+                    # size=None, # Podrías añadir tamaño basado en otra variable si quisieras
+                    use_container_width=True
+                    # tooltip='tooltip' # Descomentar si definiste la columna tooltip
+                )
+                # Opcional: Mostrar correlación
+                try:
+                    correlation = data_filtrada[x_axis].corr(data_filtrada[y_axis])
+                    st.write(f"Correlación de Pearson entre {x_axis} y {y_axis}: {correlation:.3f}")
+                except Exception:
+                    st.write("No se pudo calcular la correlación (podría haber valores NaN).")
+
+        else:
+            st.info("Seleccione variables para los ejes X e Y para ver el gráfico.")
+
+    except Exception as e:
+        imprimir_error("Error al cargar la página de análisis de dispersión", e)
+
+
 paginas_a_funciones = {
     "Inicio": cargar_inicio,
     "Resumen": cargar_resumen,
@@ -314,6 +404,7 @@ paginas_a_funciones = {
     "Material Particulado": cargar_material_particulados,
     "Variables Meteorológicas": cargar_variables_meteorologicas,
     "Niveles de Presión Sonora": cargar_niveles_presion_sonora,
+    "Análisis de Dispersión": cargar_pagina_dispersion, # <-- Nueva página añadida aquí
 }
 
 st.sidebar.header("Calidad de Aire QAIRA", divider="blue")
