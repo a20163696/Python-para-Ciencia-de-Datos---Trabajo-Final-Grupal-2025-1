@@ -1,0 +1,8 @@
+# requirements.txt
+streamlit
+pandas
+pydeck
+numpy
+calplot
+matplotlib
+plotly # Added for the boxplot page
